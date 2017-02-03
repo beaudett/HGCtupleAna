@@ -15,19 +15,19 @@ def getTreeFromFiles(opts):
 
     if opts.verbose > 0:
         print("#Added %i files to chain %s" %(chain.GetNtrees(),opts.treename))
-        print("#Chain contains %i events" % chain.GetEntries())
+        print("#Chain contains %i entries" % chain.GetEntries())
 
     return chain
 
 def anaTree(tree, opts):
-    "Analyze event"
+    "Analyze entry"
 
     if opts.maxEntries == -1: opts.maxEntries = tree.GetEntries()
-    if opts.verbose > 0: print("#Going to analyze %i events" %opts.maxEntries)
+    if opts.verbose > 0: print("#Going to analyze %i entries" %opts.maxEntries)
 
-    for ievent, event in enumerate(tree):
-        if opts.verbose > 1: print ("#Analyzing event number %i" %ievent)
-        if ievent > opts.maxEntries-1: break
+    for ientry, entry in enumerate(tree):
+        if opts.verbose > 1: print ("#Analyzing entry number %i" %ientry)
+        if ientry > opts.maxEntries-1: break
 
         ## Do analysis
 
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     parser.add_option("-b","--batch", dest="batch",default=False, action="store_true", help="Batch mode")
     parser.add_option("-f","--file", dest="infile",default="root://eosuser.cern.ch//eos/user/b/beaudett/local/hgcal/singleElePt15-extendedNtp.root",help="Input File name(s)")
     parser.add_option("-t","--tname", dest="treename",default="ana/hgc",help="Tree name")
-    parser.add_option("-n","--maxEve","--maxEvents", "--maxEntries",dest="maxEntries", default=-1,  type="int",    help="Maximum events to analyze")
+    parser.add_option("-n","--maxEve","--maxEvents", "--maxEntries",dest="maxEntries", default=-1,  type="int",    help="Maximum entries to analyze")
     parser.add_option("-v","--verbose",  dest="verbose",  default=1,  type="int",    help="Verbosity level (0 = quiet, 1 = verbose, 2+ = more)")
 
     ## Options examples (NOT USED)
