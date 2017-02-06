@@ -31,6 +31,10 @@ def anaTree(tree, opts):
 
         ## Do analysis
 
+        # example access
+        for particle in entry.particles:
+            print(particle.eta)
+
     return 1
 
 if __name__ == "__main__":
