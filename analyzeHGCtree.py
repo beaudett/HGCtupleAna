@@ -49,7 +49,6 @@ def anaTree(tree, opts):
     dxs = []
     dys = []
     dzs = []
-    result = []
 
     if opts.maxEntries == -1: opts.maxEntries = tree.GetEntries()
     if opts.verbose > 0: print("#Going to analyze %i entries" %opts.maxEntries)
@@ -116,6 +115,12 @@ def anaTree(tree, opts):
         q = raw_input("Exit")
 
     canv.SaveAs(opts.plotdir+canv.GetName()+".pdf")
+
+    # save output to root file
+    ofile = rt.TFile(opts.plotdir+"/plots.root","recreate")
+    for obj in hists+[canv]:
+        obj.Write()
+    ofile.Close()
 
     return 1
 
