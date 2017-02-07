@@ -64,9 +64,11 @@ def anaTree(tree, opts):
 
         ## Access particles
         for particle in entry.particles:
-            #print(particle.eta)
 
+            # require initial particle
             if particle.gen < 1: continue
+            # require particle to reach EE
+            if not particle.reachedEE: continue
 
             ## Get PosZ
             # convert vector to array
