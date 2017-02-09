@@ -105,6 +105,8 @@ def anaTree(tree, opts):
                 dy = posy[rechit.layer-1]-rechit.y; dys.append(dy)
                 dz = posz[rechit.layer-1]-rechit.z; dzs.append(dz)
 
+                #dxlayers[rechit.layer-1].append(dx)
+
     hists = []
     hists.append(makeHist(dxs,"dx"))
     hists.append(makeHist(dys,"dy"))

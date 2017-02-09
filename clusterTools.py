@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 import math
 import ROOT as rt
+rt.gStyle.SetPalette(rt.kRainBow)
 
 class hitpoint:
     ## Simple class for yield,error storing (instead of tuple)
@@ -67,11 +68,10 @@ def plotRhoDmin3D(hits):
 
     return canv
 
-def plotColRhoDmin(hits):
+def plotColRhoDmin(hits, minrho = 0.01, mindmin = 2):
 
     mgrXY = rt.TMultiGraph(); rt.SetOwnership(mgrXY,0)
     mgrRhoDmin = rt.TMultiGraph(); rt.SetOwnership(mgrRhoDmin,0)
-
     #print("Going to fill %i points into graph" % len(hits))
     for i,hit in enumerate(hits):
 
@@ -81,11 +81,12 @@ def plotColRhoDmin(hits):
         grXY.SetPoint(0,hit.x,hit.y)
         grRhoDmin.SetPoint(0,hit.rho,hit.dmin)
 
-        grXY.SetMarkerColor(i+1)
-        grRhoDmin.SetMarkerColor(i+1)
+        col = rt.gStyle.GetColorPalette(i * 255/len(hits))
+        grXY.SetMarkerColor(col)
+        grRhoDmin.SetMarkerColor(col)
 
-        grXY.SetMarkerStyle(33)
-        grRhoDmin.SetMarkerStyle(33)
+        grXY.SetMarkerStyle(20)
+        grRhoDmin.SetMarkerStyle(20)
 
         grXY.SetMarkerSize(1.0)
         grRhoDmin.SetMarkerSize(1.0)
@@ -93,8 +94,21 @@ def plotColRhoDmin(hits):
         mgrXY.Add(grXY)
         mgrRhoDmin.Add(grRhoDmin)
 
+        # dublicate possible cluster center hits
+        if hit.rho > minrho and hit.dmin > mindmin:
+            grXYfilt = rt.TGraph(1)
+            grXYfilt.SetPoint(0,hit.x,hit.y)
+            grXYfilt.SetMarkerColor(col)
+            grXYfilt.SetMarkerStyle(24)
+            grXYfilt.SetMarkerSize(2.5)
+            mgrXY.Add(grXYfilt)
+
+            # modify marker of rho/dmin graph
+            grRhoDmin.SetMarkerStyle(24)
+            grRhoDmin.SetMarkerSize(2.5)
+
+
     #print("Filled %i graphs into multigr" %mgrRhoDmin.GetListOfGraphs().GetSize())
-    #print("Filled %i points into graph" %grRhoDmin.GetN())
     cname = "Hits"
     canv = rt.TCanvas(cname,cname,1000,600)
     canv.Divide(2)
@@ -127,7 +141,9 @@ def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
     newhits = [hit for hit in newhits if hit.z < 0]
 
     # sort by energy
-    newhits = sorted(newhits, key = lambda h: h.energy)
+    #newhits = sorted(newhits, key = lambda h: h.energy)
+    # sort by dist from center
+    newhits = sorted(newhits, key = lambda h: math.hypot(hit.x,hit.y))
 
     # calc density for each point
     for i,hit1 in enumerate(newhits):
@@ -137,7 +153,9 @@ def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
             if i == j: continue
             #if hit2.energy < minE: continue
             dist = math.hypot(hit1.x-hit2.x,hit1.y-hit2.y)
-            if dist < dcut: rho+=1
+            if dist < dcut:
+                chi = hit2.energy
+                rho += chi
 
         hit1.rho = rho
 
@@ -161,7 +179,12 @@ def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
     #print(len(hits),len(newhits))
     #print(newhits[:50])
     #plotRhoDmin(newhits)
-    #canv = plotColRhoDmin(newhits)
-    canv = plotRhoDmin3D(newhits)
+
+    maxrho = max([hit.rho for hit in newhits])
+    minrho = maxrho/12
+    mindmin = dcut*1.5
+
+    canv = plotColRhoDmin(newhits,minrho,mindmin)
+    #canv = plotRhoDmin3D(newhits)
 
     return canv

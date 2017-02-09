@@ -53,6 +53,7 @@ def anaTree(tree, opts):
     # save output to root file
     ofile = rt.TFile(opts.plotdir+"/clust_plots.root","recreate")
 
+    accumrechits = []
     for ientry, entry in enumerate(tree):
         if ientry > opts.maxEntries-1: break
         if opts.verbose > 1:
@@ -63,9 +64,13 @@ def anaTree(tree, opts):
         ##############
         ## Do analysis
         ##############
-        minE = 0.1
-        minLayer = 4
-        maxLayer = 15
+        minE = 0.05
+        minLayer = 10
+        maxLayer = 11
+
+        #print [rechit for rechit in entry.rechits]
+        accumrechits = [hitpoint(rechit) for rechit in entry.rechits]
+        print len(accumrechits)
 
         for layer in range(minLayer,maxLayer):
 
@@ -78,8 +83,8 @@ def anaTree(tree, opts):
                 ofile.mkdir(ofdir)
                 ofile.cd(ofdir)
 
-                canv = calcDensity(entry.rechits, dcut, minE, layer)
-                #canv.SetName(canv.GetName()+"_eve%i"%ientry+"_%0.1f"%dcut )
+                #canv = calcDensity(entry.rechits, dcut, minE, layer)
+                canv = calcDensity(accumrechits, dcut, minE, layer)
                 canv.SetName(canv.GetName()+"_ev%i_ly%i_dc%0.1f"% (ientry, layer,dcut) )
 
                 if not opts.batch:
