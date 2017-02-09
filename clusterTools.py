@@ -150,7 +150,7 @@ def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
         rho = 0
 
         for j,hit2 in enumerate(newhits):
-            if i == j: continue
+            #if i == j: continue
             #if hit2.energy < minE: continue
             dist = math.hypot(hit1.x-hit2.x,hit1.y-hit2.y)
             if dist < dcut:
@@ -166,7 +166,7 @@ def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
         dmin = 9999
         dmax = 0
         for j,hit2 in enumerate(newhits):
-            if i == j: continue
+            #if i == j: continue
             #if hit2.energy < minE: continue
             if hit2.rho > hit1.rho:
                 dist = math.hypot(hit1.x-hit2.x,hit1.y-hit2.y)
