@@ -69,7 +69,7 @@ def anaTree(tree, opts):
         maxLayer = 11
 
         #print [rechit for rechit in entry.rechits]
-        accumrechits += [hitpoint(rechit) for rechit in entry.rechits_raw]
+        accumrechits += [hitpoint(rechit) for rechit in entry.rechits_raw if rechit.energy > minE]
         if opts.verbose > 0: print(len(accumrechits))
 
         for layer in range(minLayer,maxLayer):
