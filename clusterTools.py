@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 import math
+import numpy as np
 import ROOT as rt
 rt.gStyle.SetPalette(rt.kRainBow)
 
@@ -205,6 +206,9 @@ def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
     #newhits = sorted(newhits, key = lambda h: h.energy)
     # sort by dist from center
     newhits = sorted(newhits, key = lambda h: math.hypot(hit.x,hit.y))
+
+    # switch back to numpy list
+    newhits = np.array(newhits)
 
     # calc density for each point
     for i,hit1 in enumerate(newhits):
