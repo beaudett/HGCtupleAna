@@ -87,7 +87,7 @@ def anaTree(tree, opts):
                 continue
 
             ## Access rechits
-            for rechit in entry.rechits:
+            for rechit in entry.rechits_raw:
                 # filter rechits by energy
                 if rechit.energy < 0.1: continue
                 # ignore rechits after EE

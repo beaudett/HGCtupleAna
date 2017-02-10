@@ -64,13 +64,13 @@ def anaTree(tree, opts):
         ##############
         ## Do analysis
         ##############
-        minE = 0.05
+        minE = 0.01
         minLayer = 10
         maxLayer = 11
 
         #print [rechit for rechit in entry.rechits]
-        accumrechits = [hitpoint(rechit) for rechit in entry.rechits]
-        print len(accumrechits)
+        accumrechits += [hitpoint(rechit) for rechit in entry.rechits_raw]
+        if opts.verbose > 0: print(len(accumrechits))
 
         for layer in range(minLayer,maxLayer):
 
