@@ -53,7 +53,9 @@ def anaTree(tree, opts):
     # save output to root file
     ofile = rt.TFile(opts.plotdir+"/clust_plots.root","recreate")
 
-    accumrechits = []
+    # accumulate rechits from different events
+    accumhits = np.array([])
+
     for ientry, entry in enumerate(tree):
         if ientry > opts.maxEntries-1: break
         if opts.verbose > 1:
@@ -68,9 +70,10 @@ def anaTree(tree, opts):
         minLayer = 10
         maxLayer = 11
 
-        #print [rechit for rechit in entry.rechits]
-        accumrechits += [hitpoint(rechit) for rechit in entry.rechits_raw if rechit.energy > minE]
-        if opts.verbose > 0: print(len(accumrechits))
+        accumhits = np.append(accumhits, [hitpoint(rechit) for rechit in entry.rechits_raw if rechit.energy > minE])
+
+        if opts.verbose > 0:
+            print("Accumulated %i hits" % len(accumhits))
 
         for layer in range(minLayer,maxLayer):
 
@@ -78,13 +81,12 @@ def anaTree(tree, opts):
                 dcut = 0+step*1.0
 
                 # create output dir
-                #ofdir = "Event_%i" %ientry + "/Layer_%i" %layer + "/dcut_%0.1f" %dcut
                 ofdir = "Event_%i" %ientry + "/Layer_%i" %layer + "/"
                 ofile.mkdir(ofdir)
                 ofile.cd(ofdir)
 
                 #canv = calcDensity(entry.rechits, dcut, minE, layer)
-                canv = calcDensity(accumrechits, dcut, minE, layer)
+                canv = calcDensity(accumhits, dcut, minE, layer)
                 canv.SetName(canv.GetName()+"_ev%i_ly%i_dc%0.1f"% (ientry, layer,dcut) )
 
                 if not opts.batch:

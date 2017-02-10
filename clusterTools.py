@@ -190,7 +190,7 @@ def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
     "Calculate local density based on cutoff distance dcut"
 
     # resave hits in list
-    newhits = [hitpoint(hit) for hit in hits]
+    newhits = hits#[hitpoint(hit) for hit in hits]
 
     # filter by energy
     newhits = [hit for hit in newhits if hit.energy > minE]
