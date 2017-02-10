@@ -125,6 +125,67 @@ def plotColRhoDmin(hits, minrho = 0.01, mindmin = 2):
 
     return canv
 
+def plotColRhoDminEneXY(hits, minrho = 0.01, mindmin = 2):
+
+    mgrXY = rt.TMultiGraph(); rt.SetOwnership(mgrXY,0)
+    mgrRhoDmin = rt.TMultiGraph(); rt.SetOwnership(mgrRhoDmin,0)
+
+    mgrEneX = rt.TMultiGraph(); rt.SetOwnership(mgrEneX,0)
+    mgrEneY = rt.TMultiGraph(); rt.SetOwnership(mgrEneY,0)
+
+    #print("Going to fill %i points into graph" % len(hits))
+    for i,hit in enumerate(hits):
+
+        grXY = rt.TGraph(1)
+        grRhoDmin = rt.TGraph(1)
+        grEneX = rt.TGraph(1)
+        grEneY = rt.TGraph(1)
+        grs = [grXY,grRhoDmin,grEneX,grEneY]
+
+        grXY.SetPoint(0,hit.x,hit.y)
+        grEneX.SetPoint(0,hit.x,hit.energy)
+        grEneY.SetPoint(0,hit.energy,hit.y)
+        grRhoDmin.SetPoint(0,hit.rho,hit.dmin)
+
+        col = rt.gStyle.GetColorPalette(i * 255/len(hits))
+        for gr in grs:
+            gr.SetMarkerColor(col)
+            gr.SetMarkerStyle(20)
+            gr.SetMarkerSize(1.0)
+
+        # highlight possible cluster center hits with big round marker
+        if hit.rho > minrho and hit.dmin > mindmin:
+            for gr in grs:
+                gr.SetMarkerStyle(24)
+                gr.SetMarkerSize(2.5)
+
+        mgrXY.Add(grXY)
+        mgrEneX.Add(grEneX)
+        mgrEneY.Add(grEneY)
+        mgrRhoDmin.Add(grRhoDmin)
+
+    #print("Filled %i graphs into multigr" %mgrRhoDmin.GetListOfGraphs().GetSize())
+    cname = "Hits"
+    canv = rt.TCanvas(cname,cname,800,800)
+    canv.DivideSquare(4,0.01,0.01)
+
+    canv.cd(4); mgrEneX.Draw("apg off")
+    canv.cd(2); mgrXY.Draw("apg off")
+    canv.cd(3); mgrRhoDmin.Draw("ap goff")
+    canv.cd(1); mgrEneY.Draw("apg off")
+
+    mgrXY.GetXaxis().SetTitle("hit x")
+    mgrXY.GetYaxis().SetTitle("hit y")
+    mgrEneX.GetXaxis().SetTitle("hit x")
+    mgrEneX.GetYaxis().SetTitle("hit energy")
+    mgrEneY.GetXaxis().SetTitle("hit energy")
+    mgrEneY.GetYaxis().SetTitle("hit y")
+
+    mgrRhoDmin.GetXaxis().SetTitle("#rho")
+    mgrRhoDmin.GetYaxis().SetTitle("#delta")
+
+    return canv
+
 def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
     "Calculate local density based on cutoff distance dcut"
 
@@ -184,7 +245,8 @@ def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
     minrho = maxrho/12
     mindmin = dcut*1.5
 
-    canv = plotColRhoDmin(newhits,minrho,mindmin)
+    #canv = plotColRhoDmin(newhits,minrho,mindmin)
+    canv = plotColRhoDminEneXY(newhits,minrho,mindmin)
     #canv = plotRhoDmin3D(newhits)
 
     return canv
