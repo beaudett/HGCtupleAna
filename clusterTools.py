@@ -134,6 +134,9 @@ def plotColRhoDminEneXY(hits, minrho = 0.01, mindmin = 2):
     mgrEneX = rt.TMultiGraph(); rt.SetOwnership(mgrEneX,0)
     mgrEneY = rt.TMultiGraph(); rt.SetOwnership(mgrEneY,0)
 
+    # circles around cluster centers
+    clustrs = []
+
     #print("Going to fill %i points into graph" % len(hits))
     for i,hit in enumerate(hits):
 
@@ -160,6 +163,13 @@ def plotColRhoDminEneXY(hits, minrho = 0.01, mindmin = 2):
                 gr.SetMarkerStyle(24)
                 gr.SetMarkerSize(2.5)
 
+            # add circle around cluster centre
+            clustr = rt.TEllipse(hit.x,hit.y,mindmin,mindmin)
+            clustr.SetLineColor(col)
+            clustr.SetFillStyle(0)
+            rt.SetOwnership(clustr,0)
+            clustrs.append(clustr)
+
         mgrXY.Add(grXY)
         mgrEneX.Add(grEneX)
         mgrEneY.Add(grEneY)
@@ -170,10 +180,12 @@ def plotColRhoDminEneXY(hits, minrho = 0.01, mindmin = 2):
     canv = rt.TCanvas(cname,cname,800,800)
     canv.DivideSquare(4,0.01,0.01)
 
-    canv.cd(4); mgrEneX.Draw("apg off")
-    canv.cd(2); mgrXY.Draw("apg off")
-    canv.cd(3); mgrRhoDmin.Draw("ap goff")
-    canv.cd(1); mgrEneY.Draw("apg off")
+    canv.cd(3); mgrEneX.Draw("apg off")
+    canv.cd(1); mgrXY.Draw("apg off")
+    # draw also cluster centers
+    #for clustr in clustrs: clustr.Draw()
+    canv.cd(4); mgrRhoDmin.Draw("ap goff")
+    canv.cd(2); mgrEneY.Draw("apg off")
 
     mgrXY.GetXaxis().SetTitle("hit x")
     mgrXY.GetYaxis().SetTitle("hit y")
