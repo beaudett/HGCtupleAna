@@ -1,6 +1,9 @@
 # HGCtupleAna
 PyROOT analyzer for HGCAL flat tuples
 
+1. [Install into CMSSW]
+2. Execute `cmsenv` to get python and required libraries
+
 To get all options run:
 
 * For simple rechit/particle deltaXYZ
