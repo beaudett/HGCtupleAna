@@ -67,10 +67,13 @@ def anaTree(tree, opts):
         ## Do analysis
         ##############
         minE = 0.01
-        minLayer = 10
-        maxLayer = 11
+        minLayer = 5
+        maxLayer = 20
 
-        accumhits = np.append(accumhits, [hitpoint(rechit) for rechit in entry.rechits_raw if rechit.energy > minE])
+        # dont accum hits
+        accumhits = np.array([hitpoint(rechit) for rechit in entry.rechits_raw if rechit.energy > minE])
+        # accumulate hits
+        #accumhits = np.append(accumhits, [hitpoint(rechit) for rechit in entry.rechits_raw if rechit.energy > minE])
 
         if opts.verbose > 0:
             print("Accumulated %i hits" % len(accumhits))
