@@ -4,6 +4,16 @@ import numpy as np
 import ROOT as rt
 rt.gStyle.SetPalette(rt.kRainBow)
 
+class hitpart:
+
+    def __init__(self, genpart):
+        self.gen = genpart.gen
+        self.eta = genpart.eta
+        self.posx = np.array(genpart.posx)
+        self.posy = np.array(genpart.posy)
+        self.posz = np.array(genpart.posz)
+        self.reachedEE = genpart.reachedEE
+
 class hitpoint:
     ## Simple class for yield,error storing (instead of tuple)
 
@@ -18,7 +28,7 @@ class hitpoint:
 
     # func that is called with print
     def __repr__(self):
-        return "(rho: %i, dmin: %f)" %(self.rho,self.dmin)
+        return "(rho: %f, dmin: %f)" %(self.rho,self.dmin)
 
 def plotRhoDmin(hits):
 
@@ -228,7 +238,6 @@ def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
 
         for j,hit2 in enumerate(newhits):
             #if i == j: continue
-            #if hit2.energy < minE: continue
             dist = math.hypot(hit1.x-hit2.x,hit1.y-hit2.y)
             if dist < dcut:
                 chi = hit2.energy
@@ -241,10 +250,9 @@ def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
         #if hit1.energy < minE: continue
 
         dmin = 9999
-        dmax = 0
+        dmax = -1
         for j,hit2 in enumerate(newhits):
-            #if i == j: continue
-            #if hit2.energy < minE: continue
+            if i == j: continue
             if hit2.rho > hit1.rho:
                 dist = math.hypot(hit1.x-hit2.x,hit1.y-hit2.y)
                 if dist < dmin: dmin = dist

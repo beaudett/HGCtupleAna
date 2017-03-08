@@ -44,6 +44,62 @@ def plotHists(hists,cname="hists",ctitle="hists"):
 
     return canv
 
+def addParticleFootprints(canv, layer, particles):
+
+    grPartXY = rt.TGraph(); rt.SetOwnership(grPartXY,0)
+    grPartXY.SetMarkerStyle(34)
+    grPartXY.SetMarkerColor(rt.kBlack)
+    grPartXY.SetMarkerSize(2)
+
+    indx = 0
+    #print(particles)
+    for particle in particles:
+        # require initial particle
+        if particle.gen < 1: continue
+        # require particle to reach EE
+        if not particle.reachedEE: continue
+        # select hemisphere
+        if particle.eta > 0: continue
+
+        ## Get PosZ
+        posx =  particle.posx[layer-1]
+        posy =  particle.posy[layer-1]
+
+        #print("Particle position: %f, %f" %(posx,posy))
+        grPartXY.SetPoint(indx,posx,posy)
+
+        indx+=1
+
+        #print grPartXY.GetN(), indx
+
+    canv.cd(1)
+    grPartXY.Draw("p same")
+    rt.gPad.Update()
+
+    return 1
+
+def addClusterFootprints(canv, layer, clusters):
+
+    grClustXY = rt.TGraph(); rt.SetOwnership(grClustXY,0)
+    grClustXY.SetMarkerStyle(25)
+    grClustXY.SetMarkerColor(rt.kBlack)
+    grClustXY.SetMarkerSize(2)
+
+    indx = 0
+    #print(particles)
+    for cluster in clusters:
+        if cluster.z > 0: continue
+        if cluster.layer != layer: continue
+
+        grClustXY.SetPoint(indx,cluster.x,cluster.y)
+        indx+=1
+
+    canv.cd(1)
+    grClustXY.Draw("p same")
+    rt.gPad.Update()
+
+    return 1
+
 def anaTree(tree, opts):
     "Analyze entry"
 
@@ -55,6 +111,8 @@ def anaTree(tree, opts):
 
     # accumulate rechits from different events
     accumhits = np.array([])
+    particles = []
+    clusters = []
 
     for ientry, entry in enumerate(tree):
         if ientry > opts.maxEntries-1: break
@@ -67,22 +125,26 @@ def anaTree(tree, opts):
         ## Do analysis
         ##############
         minE = 0.01
-        minLayer = 5
-        maxLayer = 20
+        minLayer = 10
+        maxLayer = 11
 
-        if True:
+        if False:
             # accumulate hits
             accumhits = np.append(accumhits, [hitpoint(rechit) for rechit in entry.rechits_raw if rechit.energy > minE])
+            particles += [hitpart(particle) for particle in entry.particles if particle.gen > 0]
+            clusters += [hitpoint(cluster) for cluster in entry.cluster2d if cluster.energy > minE]
         else:
-            # dont accum hits
+            # don't accum hits
             accumhits = np.array([hitpoint(rechit) for rechit in entry.rechits_raw if rechit.energy > minE])
+            particles = [hitpart(particle) for particle in entry.particles if particle.gen > 0]
+            clusters = [hitpoint(cluster) for cluster in entry.cluster2d if cluster.energy > minE]
 
         if opts.verbose > 0:
-            print("Accumulated %i hits" % len(accumhits))
+            print("Accumulated %i hits, %i 2d clusters, %i particles" % (len(accumhits),len(clusters),len(particles)))
 
         for layer in range(minLayer,maxLayer):
 
-            for step in range(1,11):
+            for step in range(2,3):
                 dcut = 0+step*1.0
 
                 # create output dir
@@ -93,6 +155,9 @@ def anaTree(tree, opts):
                 #canv = calcDensity(entry.rechits, dcut, minE, layer)
                 canv = calcDensity(accumhits, dcut, minE, layer)
                 canv.SetName(canv.GetName()+"_ev%i_ly%i_dc%0.1f"% (ientry, layer,dcut) )
+
+                addParticleFootprints(canv, layer, particles)
+                addClusterFootprints(canv, layer, clusters)
 
                 if not opts.batch:
                     canv.Draw()
