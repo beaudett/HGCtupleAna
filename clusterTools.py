@@ -246,19 +246,20 @@ def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
         hit1.rho = rho
 
     # calc distance parameter (min dist to hit with higher density)
+    dmax = -1
+
     for i,hit1 in enumerate(newhits):
-        #if hit1.energy < minE: continue
-
         dmin = 9999
-        dmax = -1
-        for j,hit2 in enumerate(newhits):
-            if i == j: continue
-            if hit2.rho > hit1.rho:
-                dist = math.hypot(hit1.x-hit2.x,hit1.y-hit2.y)
-                if dist < dmin: dmin = dist
-                if dist > dmax: dmax = dist
 
-        if dmin == 9999: dmin = dmax
+        for j,hit2 in enumerate(newhits):
+            dist = math.hypot(hit1.x-hit2.x,hit1.y-hit2.y)
+            if dist > dmax: dmax = dist
+            if hit2.rho > hit1.rho:
+                if dist < dmin: dmin = dist
+
+        if dmin == 9999:
+            print hit1,dmin,dmax
+            dmin = dmax
         hit1.dmin = dmin
 
     #print(len(hits),len(newhits))
