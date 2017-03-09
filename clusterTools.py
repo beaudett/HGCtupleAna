@@ -15,7 +15,7 @@ class hitpart:
         self.reachedEE = genpart.reachedEE
 
 class hitpoint:
-    ## Simple class for yield,error storing (instead of tuple)
+    ## simplified rechit with extra parameters
 
     def __init__(self, rechit):
         self.x = rechit.x
@@ -25,10 +25,38 @@ class hitpoint:
         self.energy = rechit.energy
         self.rho = 0.
         self.dmin = 0.
+        self.clustId = -1
+        self.centerId = -1
 
     # func that is called with print
     def __repr__(self):
         return "(rho: %f, dmin: %f)" %(self.rho,self.dmin)
+
+class hitcluster:
+    ## simple cluster class
+
+    def __init__(self, hit):
+        self.x = hit.x
+        self.y = hit.y
+        self.z = hit.z
+        self.layer = hit.layer
+        self.energy = hit.energy
+        if hasattr(hit,"nhitAll"): # for cmssw clusters
+            self.nhits = hit.nhitAll
+        else:
+            self.nhits = 1
+        #self.hits = [hit] # store all corresp hits
+
+    # func that is called with print
+    def __repr__(self):
+        #return "(rho: %f, dmin: %f)" %(self.rho,self.dmin)
+        return "(x: %f, y: %f, E: %f, nhits: %i )" %(self.x, self.y, self.energy, self.nhits)
+
+    # add single hit
+    def addhit(self,hit):
+        self.energy += hit.energy
+        self.nhits += 1
+        #self.hits.append(hit)
 
 def plotRhoDmin(hits):
 
@@ -188,7 +216,7 @@ def plotColRhoDminEneXY(hits, minrho = 0.01, mindmin = 2):
     #print("Filled %i graphs into multigr" %mgrRhoDmin.GetListOfGraphs().GetSize())
     cname = "Hits"
     canv = rt.TCanvas(cname,cname,800,800)
-    canv.DivideSquare(4,0.01,0.01)
+    canv.DivideSquare(4,0.001,0.001)
 
     canv.cd(3); mgrEneX.Draw("apg off")
     canv.cd(1); mgrXY.Draw("apg off")
@@ -250,28 +278,83 @@ def calcDensity(hits, dcut = 2.0, minE = 0.01, layer = 10):
 
     for i,hit1 in enumerate(newhits):
         dmin = 9999
+        centerId = -1
 
         for j,hit2 in enumerate(newhits):
             dist = math.hypot(hit1.x-hit2.x,hit1.y-hit2.y)
             if dist > dmax: dmax = dist
             if hit2.rho > hit1.rho:
-                if dist < dmin: dmin = dist
+                if dist < dmin:
+                    dmin = dist
+                    centerId = j
 
-        if dmin == 9999:
-            print hit1,dmin,dmax
-            dmin = dmax
+        if dmin == 9999: dmin = dmax
         hit1.dmin = dmin
+        # store index to closest hit with higher density
+        hit1.centerId = centerId
 
     #print(len(hits),len(newhits))
     #print(newhits[:50])
     #plotRhoDmin(newhits)
 
-    maxrho = max([hit.rho for hit in newhits])
+    return newhits
+
+def makeClustPlots(hits, dcut):
+
+    maxrho = max([hit.rho for hit in hits])
     minrho = maxrho/12
-    mindmin = dcut*1.5
+    mindmin = dcut #*1.5
 
     #canv = plotColRhoDmin(newhits,minrho,mindmin)
-    canv = plotColRhoDminEneXY(newhits,minrho,mindmin)
+    canv = plotColRhoDminEneXY(hits,minrho,mindmin)
     #canv = plotRhoDmin3D(newhits)
 
     return canv
+
+def makeClusters(hits, minrho , mindmin):
+
+    # make initial cluster seed from cluster centers
+    clusters = [hitcluster(hit) for hit in hits if (hit.rho > minrho and hit.dmin > mindmin)]
+    #clusterIds = set([i for i,hit in enumerate(hits) if (hit.rho > minrho and hit.dmin > mindmin)])
+    #print clusterIds
+
+    for i,hit in enumerate(hits):
+
+        # ignore centers
+        if (hit.rho > minrho and hit.dmin > mindmin): continue
+        # ignore outliers
+        if (hit.dmin > mindmin): continue
+
+        # loop over cluster centers to find closest
+        min_dist = 9999
+        closest_clustId = -1
+        for j,clust in enumerate(clusters):
+            dist = math.hypot(clust.x-hit.x,clust.y-hit.y)
+            if dist < min_dist:
+                min_dist = dist
+                closest_clustId = j
+
+        # add hit to closest cluster
+        clusters[closest_clustId].addhit(hit)
+
+    return clusters
+
+def compareClusters(clusters_old, clusters_new, layer = 10):
+
+    minE = 0.1
+    minNhit = 3
+    print("Old clusters:")
+    for clust in sorted(clusters_old, key = lambda c: math.hypot(c.x,c.y)):
+        if clust.layer != layer: continue
+        if clust.energy < minE: continue
+        if clust.nhits < minNhit : continue
+        print clust,
+    print
+
+    print("New clusters:")
+    for clust in sorted(clusters_new, key = lambda c: math.hypot(c.x,c.y)):
+        if clust.layer != layer: continue
+        if clust.energy < minE: continue
+        if clust.nhits < minNhit : continue
+        print clust,
+    print
