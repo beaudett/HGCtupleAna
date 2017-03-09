@@ -35,7 +35,7 @@ def makeHist(values,hname = "hist"):
 def plotHists(hists,cname="hists",ctitle="hists"):
 
     canv = rt.TCanvas(cname,cname,600,600)
-    canv.DivideSquare(len(hists),0.01,0.01)
+    canv.DivideSquare(len(hists),0.001,0.001)
 
     plotopt = "hist"
     for i,hist in enumerate(hists):
@@ -83,7 +83,7 @@ def addClusterFootprints(canv, layer, clusters):
     grClustXY = rt.TGraph(); rt.SetOwnership(grClustXY,0)
     grClustXY.SetMarkerStyle(25)
     grClustXY.SetMarkerColor(rt.kBlack)
-    grClustXY.SetMarkerSize(2)
+    grClustXY.SetMarkerSize(1)
 
     indx = 0
     #print(particles)
@@ -112,7 +112,7 @@ def anaTree(tree, opts):
     # accumulate rechits from different events
     accumhits = np.array([])
     particles = []
-    clusters = []
+    cms_clusters = []
 
     for ientry, entry in enumerate(tree):
         if ientry > opts.maxEntries-1: break
@@ -128,22 +128,21 @@ def anaTree(tree, opts):
         minLayer = 10
         maxLayer = 11
 
-        if False:
+        if opts.accumEvents:
             # accumulate hits
             accumhits = np.append(accumhits, [hitpoint(rechit) for rechit in entry.rechits_raw if rechit.energy > minE])
             particles += [hitpart(particle) for particle in entry.particles if particle.gen > 0]
-            clusters += [hitpoint(cluster) for cluster in entry.cluster2d if cluster.energy > minE]
+            cms_clusters += [hitcluster(cluster) for cluster in entry.cluster2d if cluster.energy > minE]
         else:
             # don't accum hits
             accumhits = np.array([hitpoint(rechit) for rechit in entry.rechits_raw if rechit.energy > minE])
             particles = [hitpart(particle) for particle in entry.particles if particle.gen > 0]
-            clusters = [hitpoint(cluster) for cluster in entry.cluster2d if cluster.energy > minE]
+            cms_clusters = [hitcluster(cluster) for cluster in entry.cluster2d if cluster.energy > minE]
 
         if opts.verbose > 0:
-            print("Accumulated %i hits, %i 2d clusters, %i particles" % (len(accumhits),len(clusters),len(particles)))
+            print("Accumulated %i hits, %i 2d clusters, %i particles" % (len(accumhits),len(cms_clusters),len(particles)))
 
         for layer in range(minLayer,maxLayer):
-
             for step in range(2,3):
                 dcut = 0+step*1.0
 
@@ -152,12 +151,27 @@ def anaTree(tree, opts):
                 ofile.mkdir(ofdir)
                 ofile.cd(ofdir)
 
-                #canv = calcDensity(entry.rechits, dcut, minE, layer)
-                canv = calcDensity(accumhits, dcut, minE, layer)
+                ####
+                # 1. calculate rho,dist for each hit
+                #####
+                hits = calcDensity(accumhits, dcut, minE, layer)
+                maxrho = max([hit.rho for hit in hits])
+                # cuts for cluster centers
+                minrho = maxrho/12
+                mindmin = dcut #*1.5
+                canv = plotColRhoDminEneXY(hits,minrho,mindmin)
                 canv.SetName(canv.GetName()+"_ev%i_ly%i_dc%0.1f"% (ientry, layer,dcut) )
-
+                # add particle and clusters to XY canvas
                 addParticleFootprints(canv, layer, particles)
-                addClusterFootprints(canv, layer, clusters)
+                addClusterFootprints(canv, layer, cms_clusters)
+
+                ####
+                # 2. merge hits to cluster centers
+                #####
+                new_clusters = makeClusters(hits,minrho,mindmin)
+                #print newclusters
+                #addClusterFootprints(canv, layer, newclusters)
+                compareClusters(cms_clusters,new_clusters)
 
                 if not opts.batch:
                     canv.Draw()
@@ -181,6 +195,7 @@ if __name__ == "__main__":
     parser.add_option("-b","--batch", dest="batch",default=False, action="store_true", help="Batch mode")
     parser.add_option("-n","--maxEve","--maxEvents", "--maxEntries",dest="maxEntries", default=-1,  type="int",    help="Maximum entries to analyze")
     parser.add_option("-v","--verbose",  dest="verbose",  default=1,  type="int",    help="Verbosity level (0 = quiet, 1 = verbose, 2+ = more)")
+    parser.add_option("-a","--accumEvents", dest="accumEvents",default=False, action="store_true", help="Accumulate events")
 
     # File options
     parser.add_option("-f","--file", dest="infile",default="root://eosuser.cern.ch//eos/user/b/beaudett/local/hgcal/singleElePt15-extendedNtp.root",help="Input File name(s)")
