@@ -19,6 +19,19 @@ def getTreeFromFiles(opts):
 
     return chain
 
+def createHistogramDictionnary():
+    histDict = {}
+    histDict['fbrem'] = rt.TH1F("fbrem","fbrem",110,-0.05,1.05)
+    histDict['dx'] =  rt.TH1F("dx","dx",100,-0.25,0.25)
+    histDict['dy'] =  rt.TH1F("dy","dy",100,-0.25,0.25)
+    histDict['dz'] =  rt.TH1F("dz","dz",100,-0.25,0.25)
+    histDict['detapos'] = rt.TH1F("detapos","detapos",100,-0.1,0.1)
+    histDict['detaneg'] = rt.TH1F("detaneg","detaneg",100,-0.1,0.1)
+    histDict['dphipos'] = rt.TH1F("dphipos","dphipos",100,-0.1,0.1)
+    histDict['dphineg'] = rt.TH1F("dphineg","dphineg",100,-0.1,0.1)
+    histDict['dphiposfbrem'] = rt.TH2F("dphiposfbrem","dphiposfbrem",25,0,1,100,-0.1,0.1)
+    histDict['dphinegfbrem'] = rt.TH2F("dphinegfbrem","dphinegfbrem",25,0,1,100,-0.1,0.1)
+    return histDict
 
 def makeHist(values,hname = "hist"):
 
@@ -45,11 +58,7 @@ def plotHists(hists,cname="hists",ctitle="hists"):
 
 def anaTree(tree, opts):
     "Analyze entry"
-
-    dxs = []
-    dys = []
-    dzs = []
-
+    histDict = createHistogramDictionnary()
     if opts.maxEntries == -1: opts.maxEntries = tree.GetEntries()
     if opts.verbose > 0: print("#Going to analyze %i entries" %opts.maxEntries)
 
@@ -69,6 +78,7 @@ def anaTree(tree, opts):
             if particle.gen < 1: continue
             # require particle to reach EE
             if not particle.reachedEE: continue
+            histDict["fbrem"].Fill(particle.fbrem)
 
             ## Get PosZ
             # convert vector to array
@@ -101,29 +111,32 @@ def anaTree(tree, opts):
                     continue
 
                 # save values
-                dx = posx[rechit.layer-1]-rechit.x; dxs.append(dx)
-                dy = posy[rechit.layer-1]-rechit.y; dys.append(dy)
-                dz = posz[rechit.layer-1]-rechit.z; dzs.append(dz)
-
-                #dxlayers[rechit.layer-1].append(dx)
-
-    hists = []
-    hists.append(makeHist(dxs,"dx"))
-    hists.append(makeHist(dys,"dy"))
-    hists.append(makeHist(dzs,"dz"))
-
-    canv = plotHists(hists,"dxyz","delta(Particle pos, rechit pos)")
+                dx = posx[rechit.layer-1]-rechit.x; histDict["dx"].Fill(dx)
+                dy = posy[rechit.layer-1]-rechit.y; histDict["dy"].Fill(dy)
+                dz = posz[rechit.layer-1]-rechit.z; histDict["dz"].Fill(dz)
+                posextrap = rt.TVector3(posx[rechit.layer-1],posy[rechit.layer-1],posz[rechit.layer-1])
+                posrechit = rt.TVector3(rechit.x,rechit.y,rechit.z)
+                deta=posextrap.Eta()-posrechit.Eta()
+                dphi=posextrap.Phi()-posrechit.Phi()
+                if particle.pid>0:
+                    histDict['detapos'].Fill(deta)
+                    histDict['dphipos'].Fill(dphi)
+                    histDict['dphiposfbrem'].Fill(particle.fbrem,dphi)
+                else:
+                    histDict['detaneg'].Fill(deta)
+                    histDict['dphineg'].Fill(dphi)
+                    histDict['dphinegfbrem'].Fill(particle.fbrem,dphi)
+            
 
     if not opts.batch:
         canv.Draw()
         q = raw_input("Exit")
 
-    canv.SaveAs(opts.plotdir+canv.GetName()+".pdf")
 
     # save output to root file
     ofile = rt.TFile(opts.plotdir+"/plots.root","recreate")
-    for obj in hists+[canv]:
-        obj.Write()
+    for obj in histDict:
+        histDict[obj].Write()
     ofile.Close()
 
     return 1
